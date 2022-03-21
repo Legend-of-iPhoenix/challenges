@@ -82,9 +82,7 @@ mod tests {
 
     #[test]
     fn provided_example() {
-        let ciphertext = byte_vec::from(include_str!("data/challenge6.txt"))
-            .ok()
-            .unwrap();
+        let ciphertext = byte_vec::from(include_str!("data/challenge6.txt")).unwrap();
         let plaintext = include_str!("data/challenge6_solution.txt");
 
         assert_eq!(
