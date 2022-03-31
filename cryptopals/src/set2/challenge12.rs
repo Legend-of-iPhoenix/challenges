@@ -30,16 +30,11 @@ pub fn aes_128_ecb_with_secret(data: &[u8]) -> Vec<u8> {
     aes_128_ecb_encrypt(&key, None, &plaintext)
 }
 
-pub fn find_first_difference(a: &[u8], b: &[u8]) -> Option<usize> {
-    a.iter().zip(b.iter()).position(|(a, b)| a != b)
-}
-
 pub fn deduce_block_size<F>(mut encrypter: F) -> usize
 where
     F: std::ops::FnMut(&[u8]) -> Vec<u8>,
 {
-    let start = find_first_difference(&encrypter(&[1; 1]), &encrypter(&[1; 2]));
-    let mut i = start.unwrap() + 1;
+    let mut i = 1;
     let mut last = encrypter(&[1u8].repeat(i));
     loop {
         let next = encrypter(&[1u8].repeat(i + 1));

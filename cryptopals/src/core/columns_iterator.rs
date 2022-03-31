@@ -1,3 +1,5 @@
+use std::iter::Iterator;
+
 pub struct Columns<T> {
     chunks: Vec<T>,
 }
@@ -9,13 +11,9 @@ where
     type Item = Vec<T::Item>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let result: Self::Item = self
-            .chunks
-            .iter_mut()
-            .filter_map(|iter| iter.next())
-            .collect();
+        let result: Self::Item = self.chunks.iter_mut().filter_map(Iterator::next).collect();
 
-        if result.len() == 0 {
+        if result.is_empty() {
             None
         } else {
             Some(result)
@@ -24,6 +22,7 @@ where
 }
 
 impl<T: Iterator> Columns<T> {
+    #[must_use]
     pub fn from(chunks: Vec<T>) -> Self {
         Self { chunks }
     }

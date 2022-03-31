@@ -41,7 +41,26 @@ impl Twister {
         Self { index: N, mt }
     }
 
-    pub fn next(&mut self) -> u32 {
+    fn twist(&mut self) {
+        for i in 0..N {
+            let x = (self.mt[i] & UPPER_MASK) + (self.mt[(i + 1) % N] & LOWER_MASK);
+            let x_a = if x % 2 == 0 { x >> 1 } else { (x >> 1) ^ A };
+
+            self.mt[i] = self.mt[(i + M) % N] ^ x_a;
+        }
+    }
+}
+
+impl Default for Twister {
+    fn default() -> Self {
+        Twister::new(5489)
+    }
+}
+
+impl Iterator for Twister {
+    type Item = u32;
+
+    fn next(&mut self) -> Option<Self::Item> {
         if self.index >= N {
             self.twist();
             self.index = 0;
@@ -56,25 +75,7 @@ impl Twister {
 
         y = y ^ (y >> L);
 
-        y & W_BITS
-    }
-
-    fn twist(&mut self) {
-        for i in 0..N {
-            let x = (self.mt[i] & UPPER_MASK) + (self.mt[(i + 1) % N] & LOWER_MASK);
-            let x_a = if x % 2 == 0 { x >> 1 } else { (x >> 1) ^ A };
-
-            if i == 0 {
-                dbg!(x_a, (i + M) % N, self.mt[(i + M) % N]);
-            }
-            self.mt[i] = self.mt[(i + M) % N] ^ x_a;
-        }
-    }
-}
-
-impl Default for Twister {
-    fn default() -> Self {
-        Twister::new(5489)
+        Some(y & W_BITS)
     }
 }
 
@@ -88,7 +89,7 @@ mod tests {
 
         let mut out = [0; 1000];
         for i in 0..1000 {
-            out[i] = rng.next();
+            out[i] = rng.next().unwrap();
         }
 
         let formatted = out.map(|entry| format!("{:08X}", entry)).join(" ");

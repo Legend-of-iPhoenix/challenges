@@ -51,7 +51,7 @@ pub fn crack_vigenere(ciphertext: &[u8], keysize_guesses: Range<usize>) -> Vec<u
             .map(|chunk| chunk.iter().cloned())
             .collect(),
     )
-    .flat_map(|row| row.clone())
+    .flatten()
     .collect()
 }
 

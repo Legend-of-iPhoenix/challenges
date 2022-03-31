@@ -1,4 +1,4 @@
-use super::{challenge12::deduce_block_size, challenge9::pkcs_7_pad};
+use super::challenge9::pkcs_7_pad;
 
 // Some implementation details:
 
@@ -148,6 +148,12 @@ pub mod cookies {
                 .get(&to_bytes!("role"))
                 .unwrap()
                 == b"admin"
+        }
+    }
+
+    impl Default for Server {
+        fn default() -> Self {
+            Self::new()
         }
     }
 }
