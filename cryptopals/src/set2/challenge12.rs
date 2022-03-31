@@ -30,12 +30,21 @@ pub fn aes_128_ecb_with_secret(data: &[u8]) -> Vec<u8> {
     aes_128_ecb_encrypt(&key, None, &plaintext)
 }
 
-pub fn deduce_block_size() -> usize {
-    let mut i = 1;
-    let mut last = aes_128_ecb_with_secret(&[0u8].repeat(i));
+pub fn find_first_difference(a: &[u8], b: &[u8]) -> Option<usize> {
+    a.iter().zip(b.iter()).position(|(a, b)| a != b)
+}
+
+pub fn deduce_block_size<F>(mut encrypter: F) -> usize
+where
+    F: std::ops::FnMut(&[u8]) -> Vec<u8>,
+{
+    let start = find_first_difference(&encrypter(&[1; 1]), &encrypter(&[1; 2]));
+    let mut i = start.unwrap() + 1;
+    let mut last = encrypter(&[1u8].repeat(i));
     loop {
-        let next = aes_128_ecb_with_secret(&[0u8].repeat(i + 1));
+        let next = encrypter(&[1u8].repeat(i + 1));
         if next[0..i] == last[0..i] {
+            dbg!(&next, &last);
             break;
         } else {
             i += 1;
@@ -47,7 +56,10 @@ pub fn deduce_block_size() -> usize {
     i
 }
 
-pub fn deduce_next_byte(blocksize: usize, known_bytes: &[u8]) -> Option<u8> {
+pub fn deduce_next_byte<F>(mut encrypter: F, blocksize: usize, known_bytes: &[u8]) -> Option<u8>
+where
+    F: std::ops::FnMut(&[u8]) -> Vec<u8>,
+{
     let known_blocks = known_bytes.len() / blocksize;
     let remainder = known_bytes.len() % blocksize;
 
@@ -59,22 +71,22 @@ pub fn deduce_next_byte(blocksize: usize, known_bytes: &[u8]) -> Option<u8> {
         plaintext.append(&mut known_bytes.to_vec());
         plaintext.push(i);
 
-        let encrypted = aes_128_ecb_with_secret(&plaintext);
+        let encrypted = encrypter(&plaintext);
         dictionary.insert(encrypted[start..start + blocksize].to_vec(), i);
     }
 
     let probe = [0u8].repeat(blocksize - remainder - 1);
 
-    let encrypted = aes_128_ecb_with_secret(&probe);
+    let encrypted = encrypter(&probe);
     Some(*dictionary.get(&encrypted[start..start + blocksize])? as u8)
 }
 
 pub fn crack_secret() -> Vec<u8> {
-    let blocksize = deduce_block_size();
+    let blocksize = deduce_block_size(aes_128_ecb_with_secret);
     assert!(is_likely_encrypted_with_ecb(&[0; 64]));
 
     let mut result = vec![];
-    while let Some(next) = deduce_next_byte(blocksize, &result) {
+    while let Some(next) = deduce_next_byte(aes_128_ecb_with_secret, blocksize, &result) {
         result.push(next);
     }
 
